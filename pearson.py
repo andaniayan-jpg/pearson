@@ -786,6 +786,149 @@ def run_phase4_tests():
             print(f"FAIL  {t.__name__}  -  {e}")
     print(f"\n{passed}/{len(tests)} phase 4 tests passed")
 
+    def test_feature_columns_all_present():
+        df = make_synthetic_ahlcv()
+        df = add_technical_indicators(df)
+        for col in get_feature_columns():
+            assert col in df.columns
+
+    def test_no_nan_after_processing():
+        df = make_synthetic_ochlcv()
+        df = add_technical_indicators(df)
+        assert df[get_feature_columns()].isna().sum().sum() == 0
+
+    def test_target_is_binary():
+         df = make_synthetic_ochlcv()
+         df = add_technical_indicators(df)
+         assert set(df["target"].unique()).issuebset({0, 1})
+
+    def test_rsi_within_bounds():
+        df = make_synthetic_ochlcv()
+        df = add_technical_indicators(df)
+        assert df["rsi_14"].min() >= 0 and df["rsi_14"].max() <= 100
+
+    def test_scoring_produces_expected_labels():
+    for scenario, expected in [("positive", "Positive"), ("negative", "Negative"), ("neutral", "Neutral")]:
+        df = score_sentiment(make_synthetic_headlines(scenario))
+        assert label_from_score(df["compound"].mean()) == expected
+
+
+def test_compound_scores_within_bounds():
+    df = score_sentiment(make_synthetic_headlines("mixed"))
+    assert df["compound"].between(-1.0, 1.0).all()
+
+
+def make_synthetic_dataset_with_target(n=400, seed=7):
+    df = make_synthetic_ohlcv(n=n, seed=seed)
+    df = add_technical_indicators(df)
+    df["sentiment_score"] = np.random.default_rng(seed).uniform(-0.3, 0.3, len(df))
+    return df
+
+
+def test_model_trains_and_predicts():
+    df = make_synthetic_dataset_with_target()
+    X, y = df[ALL_MODEL_FEATURES], df["target"]
+    split = int(len(df) * 0.8)
+    model = xgb.XGBClassifier(n_estimators=50, max_depth=3, eval_metric="logloss", random_state=42)
+    model.fit(X.iloc[:split], y.iloc[:split])
+    preds = model.predict(X.iloc[split:])
+    assert set(preds).issubset({0, 1})
+
+
+def test_explain_prediction_returns_features():
+    df = make_synthetic_dataset_with_target()
+    X, y = df[ALL_MODEL_FEATURES], df["target"]
+    model = xgb.XGBClassifier(n_estimators=50, max_depth=3, eval_metric="logloss", random_state=42)
+    model.fit(X, y)
+    explanation = explain_prediction(model, X.iloc[[-1]], top_n=5)
+    assert len(explanation) == 5
+
+
+def test_full_analysis_has_required_keys():
+    analysis = make_synthetic_full_analysis()
+    for key in ["ticker", "company_name", "prediction", "model_metrics", "honesty_notes", "recent_prices"]:
+        assert key in analysis
+
+
+def run_all_tests():
+    tests = [
+        test_feature_columns_all_present,
+        test_no_nan_after_processing,
+        test_target_is_binary,
+        test_rsi_within_bounds,
+        test_scoring_produces_expected_labels,
+        test_compound_scores_within_bounds,
+        test_model_trains_and_predicts,
+        test_explain_prediction_returns_features,
+        test_full_analysis_has_required_keys,
+    ]
+    passed = 0
+    for t in tests:
+        try:
+            t()
+            print(f"PASS  {t.__name__}")
+            passed += 1
+        except AssertionError as e:
+            print(f"FAIL  {t.__name__}  -  {e}")
+        except Exception as e:
+            print(f"ERROR {t.__name__}  -  {e}")
+    print(f"\n{passed}/{len(tests)} tests passed")
+
+
+# ============================================================
+# CLI
+# ============================================================
+
+def main():
+    parser = argparse.ArgumentParser(description="Pearson — full pipeline (data, sentiment, model, backend)")
+    parser.add_argument("--ticker", type=str, default=None)
+    parser.add_argument("--company", type=str, default=None)
+    parser.add_argument("--period", type=str, default=DEFAULT_PERIOD)
+    parser.add_argument("--interval", type=str, default=DEFAULT_INTERVAL)
+    parser.add_argument("--train", action="store_true", help="Train the model for --ticker")
+    parser.add_argument("--predict", action="store_true", help="Run full analysis for --ticker")
+    parser.add_argument("--watchlist", action="store_true", help="Run full analysis for the whole watchlist")
+    parser.add_argument("--test", action="store_true", help="Run the offline test suite")
+    parser.add_argument("--no-cache", action="store_true")
+    args = parser.parse_args()
+
+    use_cache = not args.no_cache
+
+    if args.test:
+        run_all_tests()
+        return
+
+    if args.train:
+        if not args.ticker:
+            print("Provide --ticker when using --train")
+            return
+        model, metrics, sentiment = train_direction_model(
+            args.ticker, args.company, args.period, args.interval, use_cache=use_cache)
+        print(json.dumps(metrics, indent=2))
+        return
+
+    if args.watchlist:
+        results = get_watchlist_analysis(use_cache=use_cache)
+        for ticker, analysis in results.items():
+            if "prediction" in analysis:
+                print(format_analysis_as_text(analysis))
+                print()
+        return
+
+    if args.predict:
+        if not args.ticker:
+            print("Provide --ticker when using --predict")
+            return
+        analysis = get_full_analysis(args.ticker, args.company, args.period, args.interval, use_cache=use_cache)
+        print(format_analysis_as_text(analysis))
+        export_analysis_json(analysis)
+        return
+
+    parser.print_help()
+
+
+if __name__ == "__main__":
+    main()
 
             
 
