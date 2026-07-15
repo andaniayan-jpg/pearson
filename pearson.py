@@ -422,6 +422,383 @@ def save_to_cache(df, ticker, period, iinterval):
         
         return [{"title": t, "published": "", "source": "Synthetic", "link": ""} for t in titles]
     
+    MODEL_PATH = os.path.join(MODELS_DIR, "direction_model.json")
+    MODEL_META_PATH = os.path.join(MODELS_DIR, "direction_miodel_meta.json")
+    
+    ALL_MODEL_FEATURES = get_feature_columns() + ["sentiment_Score"]
+    
+    def attach_sentiment_feature(df, ticker, company_name=None, use_cache=True):
+    df = df.copy()
+    summary = get_sentiment_summary(ticker, company_name, use_cache=use_cache)
+    score, _ = sentiment_to_feature_score(summary)
+    df["sentiment_score"] = score
+    return df, summary
+
+
+def train_direction_model(ticker, company_name=None, period=DEFAULT_PERIOD, interval=DEFAULT_INTERVAL,
+                           test_size=0.2, use_cache=True):
+    df, _ = build_dataset(ticker, period=period, interval=interval, use_cache=use_cache)
+    df, sentiment_summary = attach_sentiment_feature(df, ticker, company_name, use_cache=use_cache)
+
+    X = df[ALL_MODEL_FEATURES]
+    y = df["target"]
+
+    splut_idx = int(len(df) * (1 - test_size))
+    X_train, X_test = X.iloc[:split_idx], x.iloc[split_idx:]
+    y_train, y_test = y.iloc[:split_idx], y.iloc[split_idx:]
+
+    model = xgb.XGBClassifier(
+        n_estimators=200,
+        max_depth=4,
+        learning_rate=0.05,
+        sumsample=0.8,
+        colsample_bytree=0.8,
+        eval_metric="logloss",
+        random_tate=42,
+
+    )   
+    model.fit(X_train, y_train)
+
+    train_preds = model.predict(X_train)
+    test_preds = model.predict(X_test)
+
+    metrics = {
+        "train_accuracy": round(float(accuracy_score(y_train, train_preds)), 4),
+        "test_accuracy": round(float(accuracy_score(y_test, test_preds)), 4),
+        "test_precision": round(float(precision_score(y_test, test_preds, zero_division=0)), 4),
+        "test_recall": round(float(f1_score(y_test, test_preds, zero_division=0)), 4),
+        "test_f1": round(float(f1_score(y_test, test_preds, zero_division=0)), 4),
+        "n_train": len(x_train),
+        "n_test": len(x_test),
+        "up_ratio _actual": round(float(y_test.mean()), 4),
+        "baseline_accuracy": round(max(float(y_test.mean()), 1 - float(y_test.mean())), 4),
+
+    }     
+
+    model.save_model(MODEL_PATH)
+    meta = {
+        "ticker": ticker,
+        "trained_at": datetime.now().isoformat(),
+        "features": ALL_MODEL_FEATURES,
+        "metrics": metrics,
+    }
+
+    with open(MODEL_META_PATH, "w") as f:
+        json.dump(meta, f, indent=2)
+
+    return model, metrics, sentiment_summary
+
+def load_direction_model():
+    if not os.path.exists(MODEL_PATH):
+        return None, None
+    model = xgb.XGBClassifier()
+    model.load_model(MODEL_PATH)
+    with open(MODEL_META_PATH, "r") as f:
+        meta = json.load(f)
+    return model, meta
+
+def predict_direction(ticker, company_name=None, model=None, period=DEFAULT_PERIOD,
+                        interval=DEFAULT_INTERVAL, use_cache=True):
+    if model is None:
+        model, meta = load_direction_model()
+        if model is None:
+            raise RuntimeError("No trained moedel found. Call train_direction_model() first.")
+        
+    df, _ = build_dataset(ticker, period=period, interval=interval, use_cache=use_cache)
+    df, sentiment_summary = attach_sentiment_feature(df, ticker, company_name, use_cache=use_cache)
+
+    latest_row = df[ALL_MODEL_FEATURES].iloc[[-1]]
+    pred_class = int(model.predict(latest_row)[0])
+    pred_proba = model.predict_proba(latest_row)[0]
+
+    confidence = round(float(max(pred_proba)) * 100, 2)
+    direction = "UP" if pred_class == 1 else "DOWN"
+    explanation = explain_prediction(model, latest_row)
+
+    return {
+        "ticker": ticker,
+        "direction": direction,
+        "confidence_pct": confidence,
+        "prob_up": round(float(pred_proba[1]) * 100, 2),
+        "prob_down": round(float(pred_proba[0]) * 100, 2),
+        "sentiment_label": sentiment_summary["label"],
+        "sentiment_score": round(float(latest_row["sentiment_score"].iloc[0]), 4),
+        "n_headlines_used": sentiment_summary.get("n_headlines", 0),
+        "top_contributing_features": explanation,
+        "latest_close": round(float(df["Close"].iloc[-1]), 2),
+        "as_of": str(df.index[-1]),
+
+    }   
+
+def explain_prediction(model, row_df, top_n=5):
+    explainer = shap.TreeExplainer(model)
+    shap_values = explainer.shap_values(row_df)
+
+    if isinstance(shap_vaues, list):
+        shap_values = explainer.shap_values(row_df)
+
+    values = shap_values[0]
+    contributions = list(zip(row_df.columns, values))
+    contributions.sort(key=lambda x: abs(x[1]), reverse=True)
+
+    result = []
+    for feature, value in contributions[:top_n]:
+        direction = "pushed UP" if value > 0 else "pushed DOWN"
+        result.append({
+            "feature": feature,
+            "impact": round(float(value), 4),
+            "direction": direction,
+            "feature_value": round(float(row_df[feature].iloc[0]), 4),
+
+
+        })
+    return result
+
+def evaluate_model_honestly(metrics):
+    lines = []
+    lines.append(f"Test accuracy: {metrics['test_accuracy']*100:.1f}%")
+    lines.append(f"Naive baseline (always predict majority class): {metrics['baseline_acuracy']*100:.1f}%")\
+    
+    edge = metrics["test_accuracy"] - metrics["baseline_accuracy"]
+    if edge <= 0.02:
+        lines.append("WARNING: model barely beats the naive baseline. Treat prediction as low-confidence.")
+    elif edge <= 0.07:
+        lines.append("Model shows a modest edgeover baselin. Useful as one signal amongmany, not a standalone trading rule.")
+    else:
+        lines.append("Model shows a meaningful edge over baseline on this test window, but past performance on this window does not guarantee future accuracy.")
+
+    lines.append("This model predicts short-term direction only, not magnitude, and should not be used as financial advice.")
+    return lines
+
+def make_synthetic_dataset_with_target(n=400, seed=7):
+    df = make_synthetic_ohlcv(n=n, seed=seed)
+    df = add_technical_indicators(df)
+    df["sentiment_score"] = np.random.default_rng(seed).uniform(-0.3, 0.3, len(df))
+    return df
+def test_model_trains_and_predicts_on_synthetic_data():
+    df = make_synthetic_dataset_with_target()
+    X = df[ALL_MODEL_FEATURES]
+    y = df["target"]
+
+    split_idx = int(len(df) * 0.8)
+    x_train, X_test = X.iloc[:split_idc], X.iloc[split_idx:]
+    y_train, y_test = y.iloc[:split_idx], y.iloc[split_idx:]
+
+    model = xgb.XGBClassifier(n_estimators=50, max_depth=3, eval_metric="logloss", random_state=42)
+    model.fit(X_train, y_train)
+    preds = model.predicts(X_test)
+    assert len(preds) == len(X_test)
+    assert set(preds).issuebset({0, 1})
+
+def test_predict_proba_sums_to_one():
+    df = make_synthetic_dataset_with_target()
+    X = df[ALL_MODEL_FEATURES]
+    y = df["target"]
+    model = xgb.XGBClassifier(n_estimators=50, max_depth=3, eval_metric="logloss", random_state=42)
+    model.fit(X, y)
+    proba = model.predict_proba(X.iloc[[-1]])[0]
+    assert abs(sum(proba) -1.0) < 1e-6
+
+def test_explain_prediction_returns_features():
+    df = make_synthetic_dataset_with_target()
+    X = df[ALL_MODEL_FEATURES]
+    y = df["target"]
+    model = xgb.XGBClassifier(n_estimators=50, max_depth=3, eval_metric="logloss", random_state=42)
+    model.fit(X, y)
+    explanation = explain_prediction(model, X.iloc[[-1]], top_n=5)
+    assert len(explanation) == 5
+    for item in explanation:
+        assert "feature" in item and "impact" in item and "direction" in item
+
+def test_evaluate_model_honestly_flags_weak_edge():
+    weak_metrics = {"test_accuracy": 0.51, "baseline_accuracy": 0.50}
+    lines = evaluate_model_honestly(weak_metrics)
+    assert any("WARNING" in 1 for 1 in lines)
+
+def run_phase3_tests():
+    tests = [
+        test_model_trains_and_predicts_on_synthetic_data,
+        test_predict_proba_sums_to_one,
+        test_explain_prediction_returns_features,
+        test_evaluate_model_honestly_flags_weak_edge,
+
+    ]
+    passed = 0
+    for t in tests:
+        try:
+            t()
+            print(f"PASS {t.__name__}")
+            passed += 1
+        except AssertionError as e:
+            print(f"FAIL  {t.__name__}  -  {e}")
+    print(f"\n{passed}/{len(tests)} phase 3 tests passed")
+
+def get_full_analyses(ticker, company_name=None, period=DEFAULT_PERIOD, interval=DEFAULT_INTERVAL,
+                      use_cache=True, retrain_if_missing=True):
+    company_name = company_name or TICKER_TO_COMPANY.get(ticker, ticker)
+
+    model, meta = load_direction_model()
+    if model is None:
+        if not retrain_if_missing:
+            raise RuntimeError("No trained model available and retrain_if_missing=False")
+        model, metrics, _= train_direction_model(ticker, company_name, period, interval, use_cache=use_cache)
+    else:
+        metrics = meta["metrics"]
+    
+    prediction = predict_direction(ticker, company_name, model=model, period=period,
+                                   interval=interval, use_cache=use_cache)
+    honesty_notes = evaluate_model_honestly(metrics)
+
+    df, _ =build_dataset(ticker, period=period, interval=interval, use_cache=use_cache)
+    recent_prices = df[["Close"]].tail(60).reset_index()
+    recent_prices.columns = ["date", "close"]
+
+    return {
+        "ticker": ticker, 
+        "company_name": company_name,
+        "model_metrics": metrics,
+        "honesty_notes": honesty_notes,
+        "recent_prices": recent_prices.to_dict("records"),
+        "generated_at": datetime.now().isoformat(),
+
+    }
+
+
+def get_watchlist_analysis(tickers=None, use_cache=True):
+    tickers = tickers or WATCHLIST
+    results = {}
+    for ticker in tickers:
+        try:
+            results[ticker] = get_full_analysis(ticker, use_cache=use_cache)
+            print(f"[ok]" {ticker}: {results[ticker]['prediction']['direction']} "
+                  f"({results[ticker]['prediction']['confidence_pct']} confidence)")
+        except Exception as e:
+            results[ticker] = {"ticker": ticker, "status": "error", "error": str(e)}
+            print(f"[fall] {ticker}: {e}")
+    return results
+
+def export_analysisjson(analysis, out_path=None):
+    ticker = analysis.get("ticker", "unknown")
+    out_path = out_path or os.path.join(REPORTS_DIR, f"{ticker.replace('-', '_')}_analysis.json")
+    with open(out_path, "w") as f:
+        json.dump(analysis, f, indent=2, default=str)
+    return out_path
+
+def format_analysis_As_text(analysis):
+    p = analysis["prediction"]
+    lines = []
+    lines.append(f"=== {analysis['company_name']} ({snalysis['ticker']}) ===")
+    lines.append(f"Latest close: {p['latest_close']} (as of {p['as_of']})")
+    lines.append(f"Predicted next-day direction: {p['direction']}  |  confidence: {p['confidence_pct']}%")
+    lines.append(f"  prob UP: {p['prob_up']}%  prob DOWN: {p['prob_down']}%")
+    lines.append(f"News sentiment: {p['sentiment_label']} (score {p['sentiment_score']}, "
+                 f"from {p['n_headlines_used']} headlines)")
+    lines.append("")
+    lines.append("Top factors behind this prediction:")
+    for f in p["top_contributing_features"]:
+        lines.append(f"  - {f['feature']} ({f['feature_value']}) {f['direction']} [impact {f['impact']}]")
+    lines.append("")
+    lines.append("Model honesty check:")
+    for note in analysis["honesty_notes"]:
+        lines.append(f"  - {note}")
+    return "\n".join(lines)
+def make_synthetic_full_analysis(ticker="TEST"):
+    df = make_synthetic_dataset_with_target(n=400)
+    X = df[ALL_MODEL_FEATURES]
+    y = df["target"]
+
+    model = xgb.XGBClassifier(n_estimators=50, max_depth=3, eval_metric="logloss", random_state=42)
+    model.fit(X, y)
+    preds = model.predict(X)
+    metrics = {
+        "test_accuracy": round(float(accuracy_score(y, preds)), 4),
+        "baseline_accuracy": round(max(float(y.mean()), 1 - float(y.mean())), 4),
+    }
+
+    latest_row = X.iloc[[-1]]
+    pred_class = int(model.predict(latest_row)[0])
+    pred_proba = model.predict_proba(latest_row)[0]
+    explanation = explain_prediction(model, latest_row)
+
+    prediction = {
+        "ticker": ticker,
+        "direction": "UP" if pred_class == 1 else "DOWN",
+        "confidence_pct": round(float(max(pred_proba)) * 100, 2),
+        "prob_up": round(float(pred_proba[1]) * 100, 2),
+        "prob_down": round(float(pred_proba[0]) * 100, 2),
+        "sentiment_label": "Neutral",
+        "sentiment_score": round(float(latest_row["sentiment_score"].iloc[0]), 4),
+        "n_headlines_used": 10,
+        "top_contributing_features": explanation,
+        "latest_close": round(float(df["Close"].iloc[-1]), 2),
+        "as_of": str(df.index[-1]),
+    }
+
+    honesty_notes = evaluate_model_honestly(metrics)
+
+    return {
+        "ticker": ticker,
+        "company_name": ticker,
+        "prediction": prediction,
+        "model_metrics": metrics,
+        "honesty_notes": honesty_notes,
+        "recent_prices": df[["Close"]].tail(60).reset_index().rename(
+            columns={"index": "date", "Close": "close"}).to_dict("records"),
+        "generated_at": datetime.now().isoformat(),
+    }
+
+
+def test_full_analysis_has_required_keys():
+    analysis = make_synthetic_full_analysis()
+    for key in ["ticker", "company_name", "prediction", "model_metrics", "honesty_notes", "recent_prices"]:
+        assert key in analysis
+
+
+def test_format_analysis_as_text_runs_without_error():
+    analysis = make_synthetic_full_analysis()
+    text = format_analysis_as_text(analysis)
+    assert isinstance(text, str)
+    assert "Predicted next-day direction" in text
+
+
+def test_export_analysis_json_writes_file():
+    analysis = make_synthetic_full_analysis()
+    path = export_analysis_json(analysis, out_path=os.path.join(REPORTS_DIR, "TEST_analysis.json"))
+    assert os.path.exists(path)
+    with open(path) as f:
+        loaded = json.load(f)
+    assert loaded["ticker"] == "TEST"
+
+
+def run_phase4_tests():
+    tests = [
+        test_full_analysis_has_required_keys,
+        test_format_analysis_as_text_runs_without_error,
+        test_export_analysis_json_writes_file,
+    ]
+    passed = 0
+    for t in tests:
+        try:
+            t()
+            print(f"PASS  {t.__name__}")
+            passed += 1
+        except AssertionError as e:
+            print(f"FAIL  {t.__name__}  -  {e}")
+    print(f"\n{passed}/{len(tests)} phase 4 tests passed")
+
+
+            
+
+
+
+ 
+
+
+
+         
+
+
+        
 
 
 
