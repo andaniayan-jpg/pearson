@@ -268,7 +268,167 @@ def save_to_cache(df, ticker, period, iinterval):
         def fetch_headlines(ticker, company_name=None, max_items=MAX_HEADLINES_PER_SOURCE):
             headlines = []
 
-            yahoo_url = f
+            yahoo_url = f"https://feeds.finance.yahoo.com/rss/2.0/headline?s={ticker}&region=US&lang=en-US"
+            try: 
+                feed = feedparser.parse(yahoo_url)
+                for entry in feed.entries[:max_items]:
+                    headlines.append({
+                        "title": entry.title, "published": entry.get("published", ""),
+                        "source": "Yahoo Finance", "link": entry.get("link", ""),
+
+                    })
+
+            except Exception:
+                pass
+
+            query = company_name if company_name else ticker
+            google_url = f"le.com/rss/search?q={query}+stock&hl=en-US&gl=US&ceid=US:en"
+            try: 
+                feed = feedparser.parse(google_url)
+                for entry in feed.entries({https://news.goog
+                                           "title": entry.title, "published": entry.get("published", ""),
+                                           "source": "Google News", "link": entry.get("link", ""),
+                                           })
+            except Exception:
+                pass
+            return headlines
+
+
+        def score_sentiment(headline):
+            rows = []
+            for h in headline:
+                scores = _analyser.polarity_score(h["title"])
+                rows.append({
+                    **h, "compound": scores["compound"], "positive": scores["pos"],
+                    "negative": score["neg"], "neutral": scores["neu"],
+
+                    
+                })
+            return pd.DataFrame(rows)
+        
+        def label_from_score(avg_compound):
+            if avg_compound > 0.15:
+                return "Positive"
+            elif avg_compound < -0.15:
+                return "Negative"
+            return "Neutral"
+        
+        def _sentiment_cache_path(ticker):
+            safe_ticker = ticker.replace("/", "_'")).replace("-", "_")
+            return os.path.join(CACHE_DIR, f"sentiment_{safe_ticker}.json")
+        
+
+        def is_sentiment_cache_fresh(ticker):
+            path = _sentiment_cache_path(ticker)
+            if not os.path.exists(path):
+                return False
+            with open(path, "r") as f:
+                data = json.load(f)
+            fetched_at = datetime.fromisoformat(data["fetched_at"])
+            return datetime.now() - fetched_at < timedelta(hours=SENTIMENT_CACHE_EXPIRY_HOURS)
+        
+        def load_sentiment_cache(ticker):
+            path = _sentiment_cache_path(ticker)
+            if not os.path.exists(path):
+                return None
+            with open(path, "r") as f:
+                return json.load(f)
+            
+        def save_sentiment_cache(ticker, summary):
+            path = _sentiment_cache_path(ticker)
+            payload = {**summary, "fetched_at": datetime.now().isoformat()}
+            with open(path, "w") as f:
+                json.dump(payload, f, indent=2)
+
+        def get_sentiment_summary(ticker, company_name=None, use_cache=True):
+            if use_cache and is_sentiment_cache_fresh(ticker):
+                cached = load_sentiment_cache(ticker)
+                return cached
+            
+        headlines = fetch_headliines(ticker, company_name)
+
+        if not headline:
+            return {
+                "ticker": ticker, "avg_compound": 0.0, "label": "No data",
+                "n_headlines": 0, "top_headlines": [], "cached": False,
+
+            }
+        df = score_sentiment(headlines)
+        avg = df["compound"].mean()
+        label = label_from_score(avg)
+        top = df.reindex(df["compound"].abs().sort_values(ascending=False).index).head(5)
+
+        summary = {
+            "ticker": ticker, "avg_compound": round(float(avg), 4), "labels": label,
+            "n_headlines": len(df),
+            "positive_count": int((df["compound"] > 0.15).sum()),
+            "negative_count": int((df["compound"] < -0.15).sum()),
+            "neutral_count": int(((df["compund"] >= -0.15) & (df["compound"] <= 0.15)).sum()),
+            "top_headlines": top[["title", "compound", "source", "link"]].to_dict("records"),
+            "cached": False,
+        }
+
+        save_sentiments_cache(ticker, summary)
+        return summary
+    
+    def sentiment_to_feature_score(summary):
+        label_weight = {"Positive": 1.0, "Neutral": 0.0, "Negative": -1.0, "No data": 0.0}
+        base = label_weight.get(summary["label"], 0.0)
+        confidence_scaler = min(summary["n_headlines"] / 15, 1.0)
+        return round(summary["avg_compound"] * confidence_scaler, 4), round(base * confidence_scaler, 4)
+    
+
+    def build_watchlist_sentiments(tickers, use_cache=True):
+        results = {}
+        for ticker in tickers:
+            company = TICKER_TO_COMPANY.get(ticker, ticker)
+            try:
+                summary = get_sentiment_summary(ticker, company, use_cache=use_cache)
+                results[ticker] = summary
+                print(f"[ok] {ticker}: {sumary['label']} ({summary['avg_compound']}) from {summary['n_headlines']} headlines")
+            except Exception as e:
+                results[ticker] = {"ticker": ticker, "status": "error", "error": str(e)}
+                print(f"[fall] {ticker}: {e}")
+        return results
+    
+    def make_synthetic_headlines(scenario="mixed"):
+        positive_titles = [
+            "Company beats earnings expectations by wide margin",
+            "Analysts upgrade stock after strong quarterly guidence",
+            "New product launch drives record demand",
+            "Stock surges to all-time high on optimisitc outlook",
+            "Company announces major partnership deal, shares rally",
+
+        ]
+
+        negative_titles = [
+            "Company missesc revenue targets, share tumble",
+            "Regular launch investigation into business practices",
+            "CEO resigns amid controversy, stock drop sharply",
+            "Analyst maintains hold rating ahead of earnings",
+            "Company files routine regulatory paperwork",
+
+        ]
+
+        if scenario == "positive":
+            titles = positive_titles + neutral_titles[:2]
+
+        elif scenario == "negative": 
+            titles = negative_titles + neutral_titles[:2]
+
+        elif scenario == "neutral":
+            titles = neutral_titles * 2
+        else: titles = positive_titles[:2] + negative_titles[:2] + neutral_title[:2]
+        
+        return [{"title": t, "published": "", "source": "Synthetic", "link": ""} for t in titles]
+    
+
+
+
+
+                    
+                 
+                       
 
 
 
