@@ -1,0 +1,14 @@
+yfinance
+ta
+pandas
+numpy
+feedparser
+vaderSentiment
+xgboost
+scikit-learn
+shap
+streamlit
+plotly
+fastapi
+uvicorn[standard]
+pydantic
