@@ -1,0 +1,272 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Pearson — AI Market Direction Predictor</title>
+<link rel="stylesheet" href="/static/style.css" />
+<script src="https://cdnjs.cloudflare.com/ajax/libs/lightweight-charts/4.1.3/lightweight-charts.standalone.production.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+</head>
+<body>
+
+<div class="app-shell">
+
+  <aside class="sidebar">
+    <div class="brand">
+      <div class="brand-mark">P</div>
+      <div class="brand-name">Pearson</div>
+    </div>
+
+    <div class="search-block">
+      <label class="field-label">Ticker</label>
+      <input id="ticker-input" class="ticker-input" type="text" value="AAPL" spellcheck="false" autocomplete="off" />
+
+      <label class="field-label" style="margin-top:16px;">Period</label>
+      <select id="period-select" class="period-select">
+        <option value="6mo">6 Months</option>
+        <option value="1y">1 Year</option>
+        <option value="2y" selected>2 Years</option>
+        <option value="5y">5 Years</option>
+      </select>
+
+      <button id="run-btn" class="run-btn">
+        <span id="run-btn-text">Run Analysis</span>
+        <span id="run-spinner" class="spinner hidden"></span>
+      </button>
+    </div>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    <div class="watchlist-block">
+      <div class="field-label">Watchlist</div>
+      <div id="watchlist-list" class="watchlist-list"></div>
+    </div>
+
+    <div class="sidebar-footer">
+      <div class="status-dot" id="api-status-dot"></div>
+      <span id="api-status-text">Checking API…</span>
+    </div>
+  </aside>
+
+  <main class="main-content">
+
+    <div id="empty-state" class="empty-state">
+      <div class="empty-icon">📊</div>
+      <h2>Enter a ticker to begin</h2>
+      <p>Pearson combines technical indicators, live news sentiment, and an explainable ML model to predict short-term price direction — and honestly reports its own accuracy.</p>
+    </div>
+
+    <div id="error-state" class="error-state hidden">
+      <div class="error-icon">⚠</div>
+      <div id="error-message"></div>
+    </div>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    <div id="dashboard" class="dashboard hidden">
+
+      <header class="ticker-header">
+        <div>
+          <div class="ticker-symbol" id="header-ticker">—</div>
+          <div class="ticker-company" id="header-company">—</div>
+        </div>
+        <div class="ticker-price-block">
+          <div class="ticker-price" id="header-price">$0.00</div>
+          <div class="ticker-asof" id="header-asof">—</div>
+        </div>
+      </header>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+      <section class="prediction-grid">
+        <div class="card prediction-card">
+          <div class="card-label">Predicted Next-Day Direction</div>
+          <div id="direction-display" class="direction-display">
+            <span id="direction-arrow" class="direction-arrow">—</span>
+            <span id="direction-text" class="direction-text">—</span>
+          </div>
+          <div class="confidence-row">
+            <div class="confidence-label">Confidence</div>
+            <div class="confidence-bar-track">
+              <div id="confidence-bar-fill" class="confidence-bar-fill" style="width:0%"></div>
+            </div>
+            <div id="confidence-pct" class="confidence-pct">0%</div>
+          </div>
+          <div class="prob-split">
+            <div class="prob-item">
+              <div class="prob-dot up"></div>
+              <span>UP <b id="prob-up">0%</b></span>
+            </div>
+            <div class="prob-item">
+              <div class="prob-dot down"></div>
+              <span>DOWN <b id="prob-down">0%</b></span>
+            </div>
+          </div>
+        </div>
+
+        <div class="card sentiment-card">
+          <div class="card-label">News Sentiment</div>
+          <div class="sentiment-top">
+            <div id="sentiment-label" class="sentiment-label">—</div>
+            <div id="sentiment-score" class="sentiment-score">0.00</div>
+          </div>
+          <div class="sentiment-meta">
+            <span id="sentiment-count">0 headlines analyzed</span>
+          </div>
+          <div id="sentiment-headlines" class="sentiment-headlines"></div>
+        </div>
+      </section>
+
+      <section class="card chart-card">
+        <div class="card-label-row">
+          <div class="card-label">Price Chart</div>
+          <div class="chart-legend">
+            <span class="legend-item"><span class="legend-swatch sma10"></span>SMA 10</span>
+            <span class="legend-item"><span class="legend-swatch sma50"></span>SMA 50</span>
+          </div>
+        </div>
+        <div id="price-chart" class="price-chart"></div>
+        <div class="sub-charts">
+          <div class="sub-chart-block">
+            <div class="sub-chart-title">RSI (14)</div>
+            <canvas id="rsi-chart"></canvas>
+          </div>
+          <div class="sub-chart-block">
+            <div class="sub-chart-title">MACD</div>
+            <canvas id="macd-chart"></canvas>
+          </div>
+        </div>
+      </section>
+
+      <section class="card explain-card">
+        <div class="card-label">Why This Prediction — Feature Impact (SHAP)</div>
+        <div id="shap-bars" class="shap-bars"></div>
+      </section>
+
+      <section class="card backtest-card">
+        <div class="card-label-row">
+          <div class="card-label">Model Backtest — Historical Accuracy</div>
+          <button id="run-backtest-btn" class="secondary-btn">Run Backtest</button>
+        </div>
+        <div id="backtest-empty" class="backtest-empty">
+          Run a walk-forward backtest to see how this model would have performed historically.
+        </div>
+        <div id="backtest-results" class="backtest-results hidden">
+          <div class="backtest-metrics">
+            <div class="backtest-metric">
+              <div class="metric-value" id="bt-accuracy">—</div>
+              <div class="metric-label">Model Accuracy</div>
+            </div>
+            <div class="backtest-metric">
+              <div class="metric-value" id="bt-baseline">—</div>
+              <div class="metric-label">Naive Baseline</div>
+            </div>
+            <div class="backtest-metric">
+              <div class="metric-value" id="bt-edge">—</div>
+              <div class="metric-label">Edge Over Baseline</div>
+            </div>
+            <div class="backtest-metric">
+              <div class="metric-value" id="bt-strategy-return">—</div>
+              <div class="metric-label">Strategy Return</div>
+            </div>
+            <div class="backtest-metric">
+              <div class="metric-value" id="bt-holdreturn">—</div>
+              <div class="metric-label">Buy &amp; Hold Return</div>
+            </div>
+          </div>
+          <canvas id="backtest-chart"></canvas>
+          <div id="backtest-warning" class="backtest-warning hidden"></div>
+        </div>
+      </section>
+
+      <section class="card honesty-card">
+        <div class="card-label">Model Honesty Notes</div>
+        <ul id="honesty-list" class="honesty-list"></ul>
+        <div class="disclaimer">
+          Pearson predicts short-term statistical direction based on historical patterns and public sentiment.
+          It is a demonstration of applied ML and is not financial advice.
+        </div>
+      </section>
+
+    </div>
+  </main>
+</div>
+
+<script src="/static/app.js"></script>
+</body>
+</html>
