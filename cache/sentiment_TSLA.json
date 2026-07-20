@@ -1,0 +1,43 @@
+{
+  "ticker": "TSLA",
+  "avg_compound": 0.0389,
+  "label": "Neutral",
+  "n_headlines": 45,
+  "positive_count": 12,
+  "negative_count": 7,
+  "neutral_count": 26,
+  "top_headlines": [
+    {
+      "title": "Three Price Target Boosts Can\u2019t Help Tesla Stock - Barron's",
+      "compound": 0.6124,
+      "source": "Google News",
+      "link": "https://news.google.com/rss/articles/CBMidEFVX3lxTFB2R2p2UVEya2ZoSHNFZmpKdTQ0QW5BQ2RGWmxtYlR2aldBM0g1akRSSkJGTVFDWWhnMTNheTllcHhoTVoxR183bEswaE5yd3Bqcl9laFJZRXB3RFQ2V3RxV2VMOEhTcHNackJYc2dhQ1VQUnF5?oc=5"
+    },
+    {
+      "title": "Meta, Tesla, Nvidia: This ETF Went All-In on the Magnificent Seven. Is It Paying Off?",
+      "compound": 0.5994,
+      "source": "Yahoo Finance",
+      "link": "https://247wallst.com/investing/etf/2026/07/17/meta-tesla-nvidia-this-etf-went-all-in-on-the-magnificent-seven-is-it-paying-off/?.tsrc=rss"
+    },
+    {
+      "title": "Intel Stock Back In Growth Mode, But Sellers Still Smack Shares Ahead Of Q2 Report",
+      "compound": 0.5574,
+      "source": "Yahoo Finance",
+      "link": "https://finance.yahoo.com/m/41b5d5b8-e935-3a76-bac9-563d53e3bb68/intel-stock-back-in-growth.html?.tsrc=rss"
+    },
+    {
+      "title": "SpaceX Aborts Starship Test Flight 13 After Engine Failure, Completes SDA Mission",
+      "compound": -0.5106,
+      "source": "Yahoo Finance",
+      "link": "https://finance.yahoo.com/m/e27a192d-ed29-354c-925c-bb87f3f9916e/spacex-aborts-starship-test.html?.tsrc=rss"
+    },
+    {
+      "title": "SpaceX Investors Face Harsh Reality Check",
+      "compound": -0.4404,
+      "source": "Yahoo Finance",
+      "link": "https://finance.yahoo.com/markets/stocks/articles/spacex-investors-face-harsh-reality-200042180.html?.tsrc=rss"
+    }
+  ],
+  "cached": false,
+  "fetched_at": "2026-07-18T02:01:24.999700"
+}

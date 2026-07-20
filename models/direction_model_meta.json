@@ -1,0 +1,37 @@
+{
+  "ticker": "ETH-USD",
+  "trained_at": "2026-07-18T02:01:13.819154",
+  "features": [
+    "sma_10",
+    "sma_50",
+    "ema_10",
+    "macd",
+    "macd_signal",
+    "macd_diff",
+    "rsi_14",
+    "stoch_k",
+    "roc_10",
+    "bb_high",
+    "bb_low",
+    "bb_width",
+    "atr_14",
+    "obv",
+    "volume_sma_10",
+    "price_change_1d",
+    "price_change_5d",
+    "volatility_10d",
+    "sma_ratio",
+    "sentiment_score"
+  ],
+  "metrics": {
+    "train_accuracy": 0.9853,
+    "test_accuracy": 0.5109,
+    "test_precision": 0.5114,
+    "test_recall": 0.6522,
+    "test_f1": 0.5732,
+    "n_train": 545,
+    "n_test": 137,
+    "up_ratio_actual": 0.5036,
+    "baseline_accuracy": 0.5036
+  }
+}

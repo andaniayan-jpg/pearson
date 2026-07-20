@@ -1,0 +1,43 @@
+{
+  "ticker": "GOOGL",
+  "avg_compound": -0.0245,
+  "label": "Neutral",
+  "n_headlines": 45,
+  "positive_count": 10,
+  "negative_count": 15,
+  "neutral_count": 20,
+  "top_headlines": [
+    {
+      "title": "Can INTC's Google Cloud AI Deal Expansion Boost its Enterprise Growth?",
+      "compound": 0.6486,
+      "source": "Yahoo Finance",
+      "link": "https://finance.yahoo.com/technology/ai/articles/intcs-google-cloud-ai-deal-160500321.html?.tsrc=rss"
+    },
+    {
+      "title": "Alphabet Could Become Warren Buffett\u2019s Smartest Long\u2011Term Pick Yet",
+      "compound": 0.6124,
+      "source": "Yahoo Finance",
+      "link": "https://247wallst.com/investing/2026/07/17/alphabet-could-become-warren-buffetts-best-long%e2%80%91term-pick-yet/?.tsrc=rss"
+    },
+    {
+      "title": "Intel Stock Back In Growth Mode, But Sellers Still Smack Shares Ahead Of Q2 Report",
+      "compound": 0.5574,
+      "source": "Yahoo Finance",
+      "link": "https://finance.yahoo.com/m/41b5d5b8-e935-3a76-bac9-563d53e3bb68/intel-stock-back-in-growth.html?.tsrc=rss"
+    },
+    {
+      "title": "The Race to Beat Nvidia: Does Google or Amazon Have the Better In-House Silicon",
+      "compound": 0.5574,
+      "source": "Yahoo Finance",
+      "link": "https://247wallst.com/investing/2026/07/17/the-race-to-beat-nvidia-does-google-or-amazon-have-the-better-in-house-silicon/?.tsrc=rss"
+    },
+    {
+      "title": "Alphabet shares fall on report its most powerful AI model Gemini 3.5 Pro is delayed - CNBC",
+      "compound": 0.5256,
+      "source": "Google News",
+      "link": "https://news.google.com/rss/articles/CBMieEFVX3lxTE1KcVo4dnRDMVczTlBUZWh5ZUhnaEZDUC1pQXZYbHlsRl9oMXZSa0dMZzB0SlMwaTNqdGZ2RnhmQ0FuYVFpQ0g2by1acFJqVVR3MlNhM21ZcEtfS0IxaU5vNDZnRXAtdmg4bnBlVG5aTDhhM0FUZFFmU9IBfkFVX3lxTE1SNmF1cjBfZGMxaC00STBqeGJjMFVEWFpnQzNab2Z2d0VtMHkxcXRnZkZyVEN2ZXY0RWNOMXA1ZlljTTdoR3RENWRZRWlROVlkenFiQkJMZ0dnQS1QeUt4Qm5ET1h6SXZOd3o1NG5GYkUwbnlvY3hremJEVEx6Zw?oc=5"
+    }
+  ],
+  "cached": false,
+  "fetched_at": "2026-07-18T02:01:13.379198"
+}

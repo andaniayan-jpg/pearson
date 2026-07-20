@@ -9,7 +9,7 @@ from fastapi.responses import FileResponse
 from pydantic import BaseModel
 from typing import Optional, List
 
-from pearson_complete import (
+from pearson import (
     get_full_analysis,
     build_dataset,
     get_sentiment_summary,

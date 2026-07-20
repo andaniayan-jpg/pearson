@@ -1,0 +1,43 @@
+{
+  "ticker": "MSFT",
+  "avg_compound": -0.0871,
+  "label": "Neutral",
+  "n_headlines": 45,
+  "positive_count": 4,
+  "negative_count": 13,
+  "neutral_count": 28,
+  "top_headlines": [
+    {
+      "title": "MSFT Court News: Microsoft Class Action Lawsuit Alleges Securities Fraud on behalf of Investors with Losses - Morningstar",
+      "compound": -0.7351,
+      "source": "Google News",
+      "link": "https://news.google.com/rss/articles/CBMi-wFBVV95cUxPZk1lX1ZBVnBpSXZUenZPYURJUXRMS1BacUNHNmppdlRBMlBEQUphT3ZOMlk2Q3o3cDViSmR5Vk1SelpVX3ZROUM0N01uMldheWIzamlzd0dkbGtnMVR0ckpIWVBnUXRzY180cXpZOFJ1bnZtV0dfUV9Ec1lZZF9oZ0E2U0VBbWFBMnlDZWtLT2R4MkFOblFiVWlCTGotLUF5OFpGR2xrREVwZjBPUTBZeFpJX1JuVDJKWVZuWFhTb0ZYdmZaNlc5dkJKZFppT2Z6ZG1MM0x5Unczc21nMUpiaS0wbmlWc2F0SXJDZm03Q1ZPMzU5cVFtTU16OA?oc=5"
+    },
+    {
+      "title": "Update: US Equity Indexes Drop Amid Declines in Growth Sectors, Surge in Crude Oil as Washington-Tehran Widen Strikes",
+      "compound": -0.6908,
+      "source": "Yahoo Finance",
+      "link": "https://finance.yahoo.com/markets/stocks/articles/us-equity-indexes-drop-amid-171345942.html?.tsrc=rss"
+    },
+    {
+      "title": "Why Microsoft Stock Surged 10.4% Last Month But Is Sinking in June - The Motley Fool",
+      "compound": -0.5927,
+      "source": "Google News",
+      "link": "https://news.google.com/rss/articles/CBMimAFBVV95cUxPU1ktNDBYcEhHNUtnWE9QaTYyWnVXYW00d18wZ2FyeUtaS1dNZTNfeTF0MGpLSFhvdVBPZXpUeVB0aV93aGd4enM0aUxrRDRIRDgxdUxyV2RDSV9KTkNwSW12MkxlOU5KeDJlY3FIWHF0UWZUeUZFOFRDZ3FiejJ6TjBZQ0VuemotdlVFTFp3d3BGTEI0MDducw?oc=5"
+    },
+    {
+      "title": "Microsoft Is Cheaper Than the S&P 500. Now Is the Perfect Time to Load Up on the Stock. - Yahoo Finance",
+      "compound": 0.5719,
+      "source": "Google News",
+      "link": "https://news.google.com/rss/articles/CBMilwFBVV95cUxNZ2NTV2ZfLXk5MEEzS2lZT0F4ellWRlFGNlNYbmZEelQyQlZfNVBfZkJlc0NlV0ZYREpKZkQ3dzJNaGpFTFo2S1dsc0NNb29zamNWdlFScXE3R2F1WDAxc3RZUFZVak9iUkNPMnNjSjRwMFdDMjNiREV4d0tUSFFSem1mTlAzd2loU2UxN0FVSlBDTlkxZXBj?oc=5"
+    },
+    {
+      "title": "Billionaire Investor Bill Ackman\u2019s Top 5 Bets: Buy, Hold, or Steer Clear?",
+      "compound": 0.5267,
+      "source": "Yahoo Finance",
+      "link": "https://247wallst.com/investing/2026/07/17/billionaire-investor-bill-ackmans-top-5-bets-buy-hold-or-steer-clear/?.tsrc=rss"
+    }
+  ],
+  "cached": false,
+  "fetched_at": "2026-07-18T02:01:12.045607"
+}

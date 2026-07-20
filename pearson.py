@@ -44,7 +44,6 @@ _analyzer = SentimentIntensityAnalyzer()
 
 
 
-
 def fetch_price_data(ticker, period=DEFAULT_PERIOD, interval=DEFAULT_INTERVAL):
     df = yf.download(ticker, period=period, interval=interval, progress=False, auto_adjust=True)
 
