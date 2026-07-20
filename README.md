@@ -1,4 +1,8 @@
 # Pearson 
+This is made for #horizons
+
+<img width="1897" height="1020" alt="image" src="https://github.com/user-attachments/assets/b0568dbf-32b1-4017-bb76-65510ae880fb" />
+
 
 **AI was used for limited assisstance like functions domain names, and to get the api keys like yfinance and etc. But the logic, maths and features are my own work**
 
@@ -40,6 +44,8 @@ I wanted to build a platform where every prediction is presented with an explant
  - it has one more exciting feature  of XGBoost, which predicts the next day price direction with confodence percentage(%).
 
  ### Backtesting 
+ <img width="1382" height="756" alt="image" src="https://github.com/user-attachments/assets/545f2cd1-af1a-46dc-9f65-4fddba3b1300" />
+
  
  ### Amazing UI and Dashboard
 
