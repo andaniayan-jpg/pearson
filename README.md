@@ -49,16 +49,8 @@ I wanted to build a platform where every prediction is presented with an explant
 
 **Here is the HockClub NEST link to host this game:**
 
- **T use it, download the files from the repository, and open the folder in any terminal, and then install the requirements.txt by 
+ https://pearson.hackclub.app
  
- "python -m pip install -r requirements.txt" 
- 
- 
- and then run the server by 
- 
- "python -m uvicorn api.main:app --reload"
- 
-  **
 
 
 
